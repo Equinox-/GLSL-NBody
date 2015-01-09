@@ -6,6 +6,7 @@ uniform int sourceShift;
 uniform int sourceMask;
 
 #define DIRECT_TEXEL_FETCH 1
+
 vec4 particleData(int pixel) {
 #if DIRECT_TEXEL_FETCH
 	return texelFetch(sourceData,

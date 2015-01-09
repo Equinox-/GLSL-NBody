@@ -1,4 +1,5 @@
 #version 130
+precision highp float;
 
 uniform int sourceSize;
 uniform int sourceWidth;
@@ -12,11 +13,9 @@ uniform float gravConst;
 
 uniform sampler2D sourceData;
 
-varying vec2 texel;
-
 #define FAST_INVERSE_SQRT 1
-
 #define DIRECT_TEXEL_FETCH 1
+
 vec4 particleData(int pixel) {
 #if DIRECT_TEXEL_FETCH
 	return texelFetch(sourceData,
@@ -29,29 +28,30 @@ vec4 particleData(int pixel) {
 }
 
 void main() {
-	int pixel = (int(texel.x * sourceWidth) & sourceMask)
-			| (int(texel.y * sourceWidth) << sourceShift);
+	int pixel = (int(gl_FragCoord.x) & sourceMask) | (int(gl_FragCoord.y) << sourceShift);
+	int particle = pixel & ~velocityMask;
 
 	float gravDelta = deltaT * gravConst;
 
-	vec4 me1 = particleData(pixel & ~velocityMask);
-	vec4 me2 = particleData(pixel | velocityMask);
+	vec4 me1 = particleData(particle);
+	vec4 me2 = particleData(particle | velocityMask);
 	if (pixel & velocityMask) {
 		gl_FragColor = me2;
 		// Update velocity.
-		for (int px = 0; px < sourceSize << 1; px += 2) {
-			if (px != pixel) {
-				vec4 it1 = particleData(px & ~1);
-				vec4 it2 = particleData(px | 1);
+		for (int px = 0; px < sourceSize; ++px) {
+			if (px != particle) {
+				vec4 it1 = particleData(px & ~velocityMask);
+				vec4 it2 = particleData(px | velocityMask);
 
 				vec3 meToIt = it1.xyz - me1.xyz;
 #if FAST_INVERSE_SQRT
 				float invRoot = inversesqrt(dot(meToIt, meToIt) + 0.001f);
 				gl_FragColor.xyz += it1[3] * gravDelta * invRoot * invRoot
-						* invRoot * meToIt;
+				* invRoot * meToIt;
 #else
 				float distLen = length(meToIt);
-				gl_FragColor.xyz += it1[3] * gravDelta * pow(distLen + .01f, -3) * meToIt;
+				gl_FragColor.xyz += it1[3] * gravDelta * pow(distLen + .01f, -3)
+						* meToIt;
 #endif
 			}
 		}

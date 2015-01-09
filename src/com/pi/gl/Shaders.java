@@ -12,10 +12,18 @@ import com.pi.Main;
 
 public enum Shaders {
 	NBODY("nbody"), OUTPUT("output");
+
+	public static interface ShaderInjector {
+		public String vertShaderCallback(String src);
+
+		public String fragShaderCallback(String src);
+	}
+
 	private static Shaders current = null;
 
 	private final String fname;
 	private int program;
+	private ShaderInjector inject;
 
 	private Shaders(String fname) {
 		this.fname = fname;
@@ -38,21 +46,42 @@ public enum Shaders {
 		}
 	}
 
+	public void setInjector(ShaderInjector inject) {
+		destroy();
+		this.inject = inject;
+		ensureLoaded();
+	}
+
+	private void destroy() {
+		if (program != 0) {
+			GL20.glDeleteProgram(program);
+			program = 0;
+		}
+	}
+
 	private void ensureLoaded() {
 		if (program == 0) {
 			program = GL20.glCreateProgram();
 			int vertexShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
 			int fragmentShader = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER);
-			GL20.glShaderSource(vertexShader, textFileRead(new File(
-					Main.dataDir, "shade/" + fname + "_vert.glsl")));
+
+			String vertSrc = textFileRead(new File(Main.dataDir, "shade/"
+					+ fname + "_vert.glsl"));
+			if (inject != null)
+				vertSrc = inject.vertShaderCallback(vertSrc);
+			GL20.glShaderSource(vertexShader, vertSrc);
 			GL20.glCompileShader(vertexShader);
 			if (GL20.glGetShaderi(vertexShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 				System.err
 						.println("Vertex shader wasn't able to be compiled correctly. Error log:");
 				System.err.println(GL20.glGetShaderInfoLog(vertexShader, 1024));
 			}
-			GL20.glShaderSource(fragmentShader, textFileRead(new File(
-					Main.dataDir, "shade/" + fname + "_frag.glsl")));
+
+			String fragSrc = textFileRead(new File(Main.dataDir, "shade/"
+					+ fname + "_frag.glsl"));
+			if (inject != null)
+				fragSrc = inject.fragShaderCallback(fragSrc);
+			GL20.glShaderSource(fragmentShader, fragSrc);
 			GL20.glCompileShader(fragmentShader);
 			if (GL20.glGetShaderi(fragmentShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 				System.err
@@ -60,6 +89,7 @@ public enum Shaders {
 				System.err.println(GL20
 						.glGetShaderInfoLog(fragmentShader, 1024));
 			}
+
 			GL20.glAttachShader(program, vertexShader);
 			GL20.glAttachShader(program, fragmentShader);
 			GL20.glLinkProgram(program);

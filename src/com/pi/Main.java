@@ -19,11 +19,13 @@ import com.pi.gl.Shaders;
 import com.pi.math.Vector3;
 
 public class Main {
+	public static final float GRAV_CONST = 1E-6f;
+
 	public static final File dataDir = new File("./data");
 
 	private static double physDelta = 0;
 	private static final int PERFECT_PARTICLES = ParticleTexture
-			.perfectCount(32);
+			.perfectCount(25);
 	private static final long initTime = System.currentTimeMillis();
 
 	public static double getTime() {
@@ -67,12 +69,16 @@ public class Main {
 		camera.offset = -3;
 	}
 
+	float[] myMass;
+	Vector3[] myPos;
+	Vector3[] myVel;
+
 	private void init() {
 		buffers = new ParticleTexture[2];
 
-		float[] masses = new float[PERFECT_PARTICLES];
-		Vector3[] pos = new Vector3[PERFECT_PARTICLES];
-		Vector3[] vel = new Vector3[PERFECT_PARTICLES];
+		float[] masses = myMass = new float[PERFECT_PARTICLES];
+		Vector3[] pos = myPos = new Vector3[PERFECT_PARTICLES];
+		Vector3[] vel = myVel = new Vector3[PERFECT_PARTICLES];
 		for (int i = 0; i < PERFECT_PARTICLES; i++) {
 			pos[i] = new Vector3((float) Math.sin(i / 5f),
 					(float) Math.cos(i / 5f), 0);
@@ -104,7 +110,7 @@ public class Main {
 					buffers[0].velMask);
 
 			GL20.glUniform1f(Shaders.NBODY.uniform("deltaT"), 1);
-			GL20.glUniform1f(Shaders.NBODY.uniform("gravConst"), 1E-5f);
+			GL20.glUniform1f(Shaders.NBODY.uniform("gravConst"), GRAV_CONST);
 
 			Shaders.OUTPUT.use();
 			GL20.glUniform1i(Shaders.OUTPUT.uniform("sourceWidth"),
@@ -125,7 +131,6 @@ public class Main {
 		int frames = 0;
 		while (!Display.isCloseRequested()) {
 			windowResized(Display.getWidth(), Display.getHeight(), 1);
-			// GL11.glClearColor(1,1,1,1);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 			GL11.glMatrixMode(GL11.GL_MODELVIEW);
 			GL11.glLoadIdentity();
@@ -139,11 +144,19 @@ public class Main {
 			GL11.glDrawArrays(GL11.GL_POINTS, 0, PERFECT_PARTICLES);
 			Shaders.noProgram();
 			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			
+			GL11.glBegin(GL11.GL_POINTS);
+			GL11.glColor3f(1,0,0);
+			for (int i = 0; i<myPos.length; i++) {
+				GL11.glVertex3f(myPos[i].x, myPos[i].y, myPos[i].z);
+			}
+			GL11.glEnd();
+			
 			GL11.glPopMatrix();
 
 			Display.update();
 
-			physDelta = (getTime() - lastLoop) * 2;
+			physDelta = (getTime() - lastLoop);
 			lastLoop = getTime();
 			physics();
 			// Display.sync(30);
@@ -174,6 +187,20 @@ public class Main {
 		dataBuffer = (dataBuffer ^ 1) & 1;
 
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+
+		float dt = 1;
+		// MANUAL UPDATE
+		for (int i = 0; i < myMass.length; i++) {
+			Vector3.addto(myPos[i], myVel[i], dt);
+			for (int j = 0; j < myMass.length; j++) {
+				if (i != j) {
+					Vector3 meToIt = Vector3.lincom(myPos[j], 1, myPos[i], -1);
+					float distLen = Vector3.mag(meToIt);
+					Vector3.addto(myVel[i], meToIt, myMass[j] * GRAV_CONST*dt
+							* (float) Math.pow(distLen + .01f, -3));
+				}
+			}
+		}
 	}
 
 	public static void main(String[] args) throws LWJGLException, IOException {
