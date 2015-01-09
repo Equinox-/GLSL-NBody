@@ -1,13 +1,13 @@
 #version 120
 
-const vec2 pts[2] = { 
-    vec2(-1.0, -1.0), vec2(1.0, 1.0)};
+const vec2 corners[4] = { 
+    vec2(-1.0, 1.0), vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(1.0, -1.0) };
 
 uniform int sourceSize;
-varying float texel;
+varying vec2 texel;
 
 void main()
 {
-	texel = (pts[gl_VertexID].x + 1) / 2;
-    gl_Position = vec4(pts[gl_VertexID], 0.0, 1.0);   
+	texel = (corners[gl_VertexID].xy + 1) / 2;
+    gl_Position = vec4(corners[gl_VertexID], 0.0, 1.0);   
 }

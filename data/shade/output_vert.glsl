@@ -1,10 +1,12 @@
 #version 120
 
-uniform sampler1D sourceData;
+uniform sampler2D sourceData;
 uniform int sourceWidth;
+uniform int sourceShift;
+uniform int sourceMask;
 
 vec4 particleData(int pixel) {
-	return texture1D(sourceData, float(pixel) / sourceWidth);
+	return texture2D(sourceData, vec2(float(pixel & sourceMask) / sourceWidth, float(pixel >> sourceShift) / sourceWidth));
 }
 
 void main()
