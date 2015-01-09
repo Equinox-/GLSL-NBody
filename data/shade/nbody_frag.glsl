@@ -1,4 +1,4 @@
-#version 120
+#version 130
 
 uniform int sourceSize;
 uniform int sourceWidth;
@@ -12,13 +12,24 @@ uniform sampler2D sourceData;
 
 varying vec2 texel;
 
+#define FAST_INVERSE_SQRT 1
+
+#define DIRECT_TEXEL_FETCH 1
 vec4 particleData(int pixel) {
-	return texture2D(sourceData, vec2(float(pixel & sourceMask) / sourceWidth, float(pixel >> sourceShift) / sourceWidth));
+#if DIRECT_TEXEL_FETCH
+	return texelFetch(sourceData,
+			ivec2(pixel & sourceMask, pixel >> sourceShift), 0);
+#else
+	return texture2D(sourceData,
+			vec2(float(pixel & sourceMask) / sourceWidth,
+					float(pixel >> sourceShift) / sourceWidth));
+#endif
 }
 
 void main() {
-	int pixel = (int(texel.x * sourceWidth) & sourceMask) | (int(texel.y * sourceWidth) << sourceShift);
-	
+	int pixel = (int(texel.x * sourceWidth) & sourceMask)
+			| (int(texel.y * sourceWidth) << sourceShift);
+
 	float gravDelta = deltaT * gravConst;
 
 	vec4 me1 = particleData(pixel & ~1);
@@ -32,10 +43,14 @@ void main() {
 				vec4 it2 = particleData(px | 1);
 
 				vec3 meToIt = it1.xyz - me1.xyz;
+#if FAST_INVERSE_SQRT
+				float invRoot = inversesqrt(dot(meToIt, meToIt) + 0.001f);
+				gl_FragColor.xyz += it1[3] * gravDelta * invRoot * invRoot
+						* invRoot * meToIt;
+#else
 				float distLen = length(meToIt);
-				float invRoot = inversesqrt(dot(meToIt,meToIt));
-				gl_FragColor.xyz += it1[3] * gravDelta * invRoot * invRoot * invRoot
-						* meToIt;
+				gl_FragColor.xyz += it1[3] * gravDelta * pow(distLen + .01f, -3) * meToIt;
+#endif
 			}
 		}
 	} else {

@@ -22,7 +22,7 @@ public class Main {
 	public static final File dataDir = new File("./data");
 
 	private static double physDelta = 0;
-	private static final int PERFECT_PARTICLES = RenderTexture.perfectCount(16384);
+	private static final int PERFECT_PARTICLES = RenderTexture.perfectCount(2048);
 	private static final long initTime = System.currentTimeMillis();
 
 	public static double getTime() {
