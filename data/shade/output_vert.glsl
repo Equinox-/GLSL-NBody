@@ -19,6 +19,6 @@ vec4 particleData(int pixel) {
 
 void main()
 {
-	vec3 pos = particleData(gl_VertexID << 1).xyz;
+	vec3 pos = particleData(gl_VertexID).xyz;
     gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(pos, 1);
 }

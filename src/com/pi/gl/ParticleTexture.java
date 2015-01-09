@@ -11,10 +11,10 @@ import org.lwjgl.opengl.GL30;
 import com.pi.math.FastMath;
 import com.pi.math.Vector3;
 
-public class RenderTexture {
+public class ParticleTexture {
 	private int texture;
 	private int fbo;
-	public final int particles, width, bitWidth;
+	public final int particles, width, bitWidth, velMask;
 
 	public static int perfectCount(int minimum) {
 		int minSize = (int) Math.ceil(Math.sqrt(minimum << 1));
@@ -22,7 +22,7 @@ public class RenderTexture {
 		return (size2 * size2) >> 1;
 	}
 
-	public RenderTexture(int particles) {
+	public ParticleTexture(int particles) {
 		if (particles != perfectCount(particles))
 			throw new IllegalArgumentException(particles
 					+ " particles isn't perfect.  particles=2*4^n");
@@ -33,8 +33,10 @@ public class RenderTexture {
 		while ((width >>= 1) > 0)
 			bitWidth++;
 		this.bitWidth = bitWidth;
+		this.velMask = 1 << ((bitWidth << 1) - 1);
 		System.out.println("Created with " + particles + " on a " + this.width
-				+ "x" + this.width + " texture with a shift of " + bitWidth);
+				+ "x" + this.width + " texture with a shift of " + bitWidth
+				+ ".  The velocity mask is " + velMask);
 	}
 
 	public void generate() {
@@ -78,6 +80,8 @@ public class RenderTexture {
 			rawData.put(pos[i].y);
 			rawData.put(pos[i].z);
 			rawData.put(mass[i]);
+		}
+		for (int i = 0; i < particles; i++) {
 			if (vel != null) {
 				rawData.put(vel[i].x);
 				rawData.put(vel[i].y);

@@ -4,6 +4,8 @@ uniform int sourceSize;
 uniform int sourceWidth;
 uniform int sourceShift;
 uniform int sourceMask;
+uniform int velocityMask;
+
 uniform float deltaT;
 
 uniform float gravConst;
@@ -32,9 +34,9 @@ void main() {
 
 	float gravDelta = deltaT * gravConst;
 
-	vec4 me1 = particleData(pixel & ~1);
-	vec4 me2 = particleData(pixel | 1);
-	if (pixel & 1) {
+	vec4 me1 = particleData(pixel & ~velocityMask);
+	vec4 me2 = particleData(pixel | velocityMask);
+	if (pixel & velocityMask) {
 		gl_FragColor = me2;
 		// Update velocity.
 		for (int px = 0; px < sourceSize << 1; px += 2) {

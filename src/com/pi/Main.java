@@ -14,7 +14,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
 
 import com.pi.gl.Camera;
-import com.pi.gl.RenderTexture;
+import com.pi.gl.ParticleTexture;
 import com.pi.gl.Shaders;
 import com.pi.math.Vector3;
 
@@ -22,7 +22,8 @@ public class Main {
 	public static final File dataDir = new File("./data");
 
 	private static double physDelta = 0;
-	private static final int PERFECT_PARTICLES = RenderTexture.perfectCount(2048);
+	private static final int PERFECT_PARTICLES = ParticleTexture
+			.perfectCount(32);
 	private static final long initTime = System.currentTimeMillis();
 
 	public static double getTime() {
@@ -56,7 +57,7 @@ public class Main {
 	}
 
 	private Camera camera;
-	private RenderTexture[] buffers;
+	private ParticleTexture[] buffers;
 	private int dataBuffer;
 	private IntBuffer drawQueue;
 	final float radius = 30;
@@ -67,7 +68,7 @@ public class Main {
 	}
 
 	private void init() {
-		buffers = new RenderTexture[2];
+		buffers = new ParticleTexture[2];
 
 		float[] masses = new float[PERFECT_PARTICLES];
 		Vector3[] pos = new Vector3[PERFECT_PARTICLES];
@@ -79,7 +80,7 @@ public class Main {
 			masses[i] = 1;
 		}
 		for (int i = 0; i < 2; i++) {
-			buffers[i] = new RenderTexture(PERFECT_PARTICLES);
+			buffers[i] = new ParticleTexture(PERFECT_PARTICLES);
 			buffers[i].generate();
 			buffers[i].setData(masses, null, pos, vel);
 		}
@@ -99,6 +100,8 @@ public class Main {
 					buffers[0].bitWidth);
 			GL20.glUniform1i(Shaders.NBODY.uniform("sourceMask"),
 					(1 << buffers[0].bitWidth) - 1);
+			GL20.glUniform1i(Shaders.NBODY.uniform("velocityMask"),
+					buffers[0].velMask);
 
 			GL20.glUniform1f(Shaders.NBODY.uniform("deltaT"), 1);
 			GL20.glUniform1f(Shaders.NBODY.uniform("gravConst"), 1E-5f);
