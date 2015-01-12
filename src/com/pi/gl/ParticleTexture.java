@@ -57,8 +57,8 @@ public class ParticleTexture {
 
 		fbo = GL30.glGenFramebuffers();
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
-		GL30.glFramebufferTexture1D(GL30.GL_FRAMEBUFFER,
-				GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_1D, texture, 0);
+		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER,
+				GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, texture, 0);
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 	}
 

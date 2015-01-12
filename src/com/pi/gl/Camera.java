@@ -14,7 +14,7 @@ public class Camera {
 	public static Camera curr;
 
 	public Camera() {
-		offset = -50.0f;
+		offset = 50000.0f;
 		pose = Matrix4.identity();
 		curr = this;
 	}
@@ -25,7 +25,7 @@ public class Camera {
 	public void process() {
 		final float deltaX = Mouse.getDX();
 		final float deltaY = Mouse.getDY();
-		offset += Mouse.getDWheel() / 25.0f;
+		offset += Mouse.getDWheel()* 25.0f;
 
 		Vector3 camPos = new Vector3(Mouse.getX() / (float) Display.getWidth()
 				- 0.5f, Mouse.getY() / (float) Display.getHeight() - 0.5f, 0);
