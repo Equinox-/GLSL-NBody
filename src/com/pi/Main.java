@@ -20,20 +20,13 @@ import com.pi.gl.Camera;
 import com.pi.gl.ParticleTexture;
 import com.pi.gl.Shaders;
 import com.pi.math.Vector3;
-import com.pi.setups.Gravity;
+import com.pi.setups.GravityDarkMatter;
 import com.pi.setups.SpiralGalaxy;
 
 public class Main {
-	public static final float GRAV_CONST = 1.567783995250E-28f;
-
-	public static final float TIME_DELTA = 60 * 60 * 24 * 365.25f * 1000f
-			* 100f;
-
 	public static final File dataDir = new File("./data");
 
 	private static double physDelta = 0;
-	private static final int PERFECT_PARTICLES = ParticleTexture
-			.perfectCount(8192);
 	private static final long initTime = System.currentTimeMillis();
 
 	public static double getTime() {
@@ -46,10 +39,20 @@ public class Main {
 
 	private static final float HORIZ_FOV = 120;
 
-	public Main() throws LWJGLException, IOException {
+	private final int particleCount;
+	private final float timeDelta;
+	private final InteractionScript interact;
+	private final PlacementScript placement;
+
+	public Main(int particleCount, float deltaT, InteractionScript interact,
+			PlacementScript placement) throws LWJGLException, IOException {
+		this.timeDelta = deltaT;
+		this.particleCount = ParticleTexture.perfectCount(particleCount);
+		this.interact = interact;
+		this.placement = placement;
+
 		Display.setDisplayMode(new DisplayMode(1280, 720));
-		Display.setTitle("Docking");
-		PixelFormat px = new PixelFormat();
+		Display.setTitle("NBody");
 		Display.create(new PixelFormat().withAccumulationBitsPerPixel(8));
 
 		load();
@@ -82,30 +85,29 @@ public class Main {
 	Vector3[] myVel;
 
 	private void init() {
-		Shaders.NBODY.setInjector(new Gravity());
+		Shaders.NBODY.setInjector(interact);
 
 		buffers = new ParticleTexture[2];
 
-		float[] masses = myMass = new float[PERFECT_PARTICLES];
-		Vector3[] pos = myPos = new Vector3[PERFECT_PARTICLES];
-		Vector3[] vel = myVel = new Vector3[PERFECT_PARTICLES];
-		new SpiralGalaxy().fill(masses, pos, vel, null);
+		float[] masses = myMass = new float[particleCount];
+		Vector3[] pos = myPos = new Vector3[particleCount];
+		Vector3[] vel = myVel = new Vector3[particleCount];
+		placement.fill(masses, pos, vel, null);
 
 		for (int i = 0; i < 2; i++) {
-			buffers[i] = new ParticleTexture(PERFECT_PARTICLES);
+			buffers[i] = new ParticleTexture(particleCount);
 			buffers[i].generate();
 			buffers[i].setData(masses, null, pos, vel);
 		}
 		dataBuffer = 0;
-		drawQueue = BufferUtils.createIntBuffer(PERFECT_PARTICLES);
-		for (int i = 0; i < PERFECT_PARTICLES; i++)
+		drawQueue = BufferUtils.createIntBuffer(particleCount);
+		for (int i = 0; i < particleCount; i++)
 			drawQueue.put(i);
 		drawQueue.flip();
 
 		{
 			Shaders.NBODY.use();
-			GL20.glUniform1i(Shaders.NBODY.uniform("sourceSize"),
-					PERFECT_PARTICLES);
+			GL20.glUniform1i(Shaders.NBODY.uniform("sourceSize"), particleCount);
 			GL20.glUniform1i(Shaders.NBODY.uniform("sourceWidth"),
 					buffers[0].width);
 			GL20.glUniform1i(Shaders.NBODY.uniform("sourceShift"),
@@ -114,7 +116,7 @@ public class Main {
 					(1 << buffers[0].bitWidth) - 1);
 			GL20.glUniform1i(Shaders.NBODY.uniform("velocityMask"),
 					buffers[0].velMask);
-			GL20.glUniform1f(Shaders.NBODY.uniform("deltaT"), TIME_DELTA);
+			GL20.glUniform1f(Shaders.NBODY.uniform("deltaT"), timeDelta);
 
 			Shaders.OUTPUT.use();
 			GL20.glUniform1i(Shaders.OUTPUT.uniform("sourceWidth"),
@@ -154,7 +156,7 @@ public class Main {
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D,
 					buffers[dataBuffer & 1].getTexture());
 			Shaders.OUTPUT.use();
-			GL11.glDrawArrays(GL11.GL_POINTS, 0, PERFECT_PARTICLES);
+			GL11.glDrawArrays(GL11.GL_POINTS, 0, particleCount);
 			Shaders.noProgram();
 			GL11.glDisable(GL11.GL_TEXTURE_2D);
 
@@ -236,6 +238,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws LWJGLException, IOException {
-		new Main();
+		new Main(8192, 60 * 60 * 24 * 365.25f * 1000f * 100f, new GravityDarkMatter(GravityDarkMatter.GRAVITY_GALACTIC),
+				new SpiralGalaxy());
 	}
 }
