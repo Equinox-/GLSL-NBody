@@ -20,8 +20,8 @@ import com.pi.gl.Camera;
 import com.pi.gl.ParticleTexture;
 import com.pi.gl.Shaders;
 import com.pi.math.Vector3;
-import com.pi.setups.Galaxy;
 import com.pi.setups.Gravity;
+import com.pi.setups.SpiralGalaxy;
 
 public class Main {
 	public static final float GRAV_CONST = 1.567783995250E-28f;
@@ -89,7 +89,7 @@ public class Main {
 		float[] masses = myMass = new float[PERFECT_PARTICLES];
 		Vector3[] pos = myPos = new Vector3[PERFECT_PARTICLES];
 		Vector3[] vel = myVel = new Vector3[PERFECT_PARTICLES];
-		new Galaxy().fill(masses, pos, vel, null);
+		new SpiralGalaxy().fill(masses, pos, vel, null);
 
 		for (int i = 0; i < 2; i++) {
 			buffers[i] = new ParticleTexture(PERFECT_PARTICLES);

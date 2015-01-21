@@ -3,7 +3,7 @@ package com.pi.setups;
 import com.pi.PlacementScript;
 import com.pi.math.Vector3;
 
-public class Galaxy implements PlacementScript {
+public class Whirlpool implements PlacementScript {
 	private static final float blackHoleMass = 2.6e6f;
 	private static final float galacticRadius = 100e3f;
 	private static final float diskRadius = 1e3f;
